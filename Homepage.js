@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { Text, View, StyleSheet, BackHandler, Button, ActivityIndicator } from 'react-native'
+import { Text, View, StyleSheet, BackHandler, Button, ActivityIndicator, TouchableOpacity } from 'react-native'
 import { WebView } from 'react-native-webview';
 import * as Progress from 'react-native-progress';
 import {
@@ -34,34 +34,40 @@ const Error = ({ reload }) => {
   );
 };
 const HomePage = ({ navigation }) => {
-  const webviewRef = useRef();
-  const [canGoBack, setCanGoBack] = useState(false);
+  const webviewRef = useRef(null)
+  const [canGoBacks, setCanGoBacks] = useState(false);
   const [currentUrl, setCurrentUrl] = useState('https://xsinfoways.net/resi_work/')
   const [progress, setProgress] = useState(0);
   const [loaded, setLoaded] = useState(false)
   useEffect(() => {
     getValue();
+    if (Platform.OS == "android") {
+      BackHandler.addEventListener('hardwareBackPress', backButtonHandler);
+    }
+    return () => {
+      BackHandler.removeEventListener("hardwareBackPress", backButtonHandler);
+    };
 
-  }, []);
+  }, [canGoBacks]);
   const getValue = async () => {
-    console.log('getValue')
     const value = await AsyncStorage.getItem('token')
-    console.log(value)
-
   }
   const onProgessLoad = ({ nativeEvent }) => {
-    console.log("onProgressLoad")
+
     setProgress(nativeEvent.progress)
 
   }
-  const onNavigationStateChange = (navState) => {
-    console.log("onNavigationStateChange")
-    if (navState.url.includes('https://xsinfoways.net/Myresiliancework/login.html')) {
-      console.log('stopLoading')
-      // navigation.replace('Login')
+  const onNavigationStateChange = ({ url, canGoBack }) => {
+    console.log(canGoBack)
+
+    setCanGoBacks(canGoBack)
+    console.log(canGoBacks)
+
+    if (url.includes('https://xsinfoways.net/Myresiliancework/login.html')) {
+
     }
-    else if (navState.url.includes('pdf')) {
-      console.log(navState.url + "true")
+    else if (url.includes('pdf')) {
+
       CustomTabs.openURL(navState.url, {
         toolbarColor: '#607D8B',
         enableUrlBarHiding: true,
@@ -82,12 +88,25 @@ const HomePage = ({ navigation }) => {
 
 
   };
+  const backButtonHandler = () => {
+    console.log(canGoBacks)
+    if (webviewRef.current) {
+      if (canGoBacks) {
+        console.log("goBack")
+        webviewRef.current.goBack()
+      }
+      else {
+        console.log("Exit")
+        BackHandler.exitApp()
+      }
+    }
+  }
   const reload = () => {
     webviewRef.current.reload();
   }
   const handleMessage = (event) => {
     if (event.nativeEvent.data && event.nativeEvent.data.indexOf("$#doctitle-") == 0) {
- 
+
     }
   }
 
@@ -110,7 +129,7 @@ const HomePage = ({ navigation }) => {
         javaScriptEnabled
         domStorageEnabled
         onLoadEnd={() => {
-          console.log('onLoadEnd')
+
           setLoaded(true)
         }}
         onLoadProgress={onProgessLoad}
@@ -118,6 +137,16 @@ const HomePage = ({ navigation }) => {
         // renderError={() => <Error reload={reload} />}
         startInLoadingState
       />
+      <View
+        style={{
+          padding: 20,
+          flexDirection: 'row',
+          justifyContent: 'space-around',
+          backgroundColor: '#2ed2d2'
+        }}>
+
+
+      </View>
     </View>
   )
 
